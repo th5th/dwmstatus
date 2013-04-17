@@ -18,9 +18,9 @@ Bool get_date_time(char *buf);
 
 Bool get_batt_info(char *buf) {
     char batt_state[STATUS_BUF_SIZE];
-	float energy_now, energy_full, energy_full_design, percent;
+    float energy_now, energy_full, energy_full_design, percent;
 
-	energy_now = (float)read_int_from_file("/sys/class/power_supply/BAT0/energy_now");
+    energy_now = (float)read_int_from_file("/sys/class/power_supply/BAT0/energy_now");
     energy_full	= (float)read_int_from_file("/sys/class/power_supply/BAT0/energy_full");
     energy_full_design =
         (float)read_int_from_file("/sys/class/power_supply/BAT0/energy_full_design");
@@ -28,7 +28,7 @@ Bool get_batt_info(char *buf) {
 
     if(abs(energy_full-energy_full_design) / energy_full_design > 0.1)
     {
-		fprintf(stderr, "Warning: Large energy_full - energy_full_design deviation. "
+        fprintf(stderr, "Warning: Large energy_full - energy_full_design deviation. "
                 "Falling back to design value.\n");
         percent = energy_now / energy_full_design;
     } else {
@@ -37,7 +37,7 @@ Bool get_batt_info(char *buf) {
 
     if(percent < 0.0)
     {
-		fprintf(stderr, "Battery percent < 0.\n");
+        fprintf(stderr, "Battery percent < 0.\n");
         return False;
     }
 
@@ -57,11 +57,11 @@ Bool get_date_time(char *buf)
     if(resulttm == NULL) {
         fprintf(stderr, "Error getting localtime.\n");
         return False;
-	}
-	if(!strftime(buf, sizeof(char)*STATUS_BUF_SIZE - 1, "%A %d %B %R", resulttm)) {
-		fprintf(stderr, "strftime is 0.\n");
+    }
+    if(!strftime(buf, sizeof(char)*STATUS_BUF_SIZE - 1, "%A %d %B %R", resulttm)) {
+        fprintf(stderr, "strftime is 0.\n");
         return False;
-	}
+    }
 
     return True;
 }
