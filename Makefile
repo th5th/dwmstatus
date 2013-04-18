@@ -13,16 +13,19 @@ PREFIX = /home/th5th/
 LIBS = -lX11
 
 # flags
-CPPFLAGS = -DVERSION=\"${VERSION}\" -DDEBUG
-CFLAGS = -g -std=c99 -pedantic -Wall -O0 ${INCS} ${CPPFLAGS}
+CPPFLAGS = -DVERSION=\"${VERSION}\"
+CFLAGS = -g -std=c99 -pedantic -Wall -O0 ${INCS}
 LDFLAGS = -g ${LIBS}
 
 CC = gcc
 
-all: dwmstatus
+debug: dwmstatus
+debug: CPPFLAGS += -DDEBUG 
+
+release: dwmstatus
 
 .o:
-	${CC} -c ${CFLAGS} $<
+	${CC} -c ${CFLAGS} ${CPPFLAGS} $<
 
 dwmstatus: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
@@ -30,7 +33,7 @@ dwmstatus: ${OBJ}
 clean:
 	rm -f ${NAME} ${OBJ}
 
-install: all
+install: release
 	echo Installing executable file to ${DESTDIR}${PREFIX}/bin
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f ${NAME} ${DESTDIR}${PREFIX}/bin
@@ -40,4 +43,4 @@ uninstall:
 	echo Removing executable file from ${DESTDIR}${PREFIX}/bin
 	rm -f ${DESTDIR}${PREFIX}/bin/${NAME}
 
-.PHONY: all clean install uninstall
+.PHONY: clean debug install release uninstall
