@@ -116,8 +116,9 @@ int main(int argc, char *argv[])
             return 2;
         }
 
+#ifndef DEBUG
         sprintf(status_text, "%s  |  %s", batt_buf, time_buf);
-#ifdef DEBUG
+#else
         printf("%s\n", status_text);
 #endif // DEBUG
         XStoreName(disp, DefaultRootWindow(disp), status_text);
