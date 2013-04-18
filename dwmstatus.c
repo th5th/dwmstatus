@@ -1,13 +1,14 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
-
 #include <unistd.h>
-//#include <sys/wait.h>
 
 #include <X11/Xlib.h>
 
 #define STATUS_BUF_SIZE 64
+
+#define INFO_STRING "dwmstatus-"VERSION", this manifestation written by Ed Willson"
 
 static Display *disp;
 
@@ -99,6 +100,15 @@ void read_str_from_file(const char *path, char *buf, size_t buf_size)
 
 int main(int argc, char *argv[])
 {
+    if(argc == 2 && !(strcmp(argv[1], "-v") && strcmp(argv[1], "--version")))
+    {
+        printf(INFO_STRING"\n");
+        exit(EXIT_SUCCESS);
+    } else if(argc > 1) {
+        printf(INFO_STRING"\nUsage dwmstatus [-v | --version]\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (!(disp = XOpenDisplay(NULL))) {
         fprintf(stderr, "Cannot open display.\n");
         return 1;
@@ -108,24 +118,26 @@ int main(int argc, char *argv[])
     char batt_buf[STATUS_BUF_SIZE];
     char time_buf[STATUS_BUF_SIZE];
 
-    for (;;sleep(10)) 
+    for(;;sleep(10)) 
     {
         if(!get_batt_info(batt_buf) || !get_date_time(time_buf))
         {
             fprintf(stderr, "Error fetching status info.\n");
-            return 2;
+            exit(EXIT_FAILURE);
         }
 
-#ifndef DEBUG
+        // Generate output string and write to X root window name / stdout.
         sprintf(status_text, "%s  |  %s", batt_buf, time_buf);
+
+#ifndef DEBUG
+        XStoreName(disp, DefaultRootWindow(disp), status_text);
+        XSync(disp, False);
 #else
         printf("%s\n", status_text);
 #endif // DEBUG
-        XStoreName(disp, DefaultRootWindow(disp), status_text);
-        XSync(disp, False);
     }
 
     XCloseDisplay(disp);
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }

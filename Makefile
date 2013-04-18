@@ -1,6 +1,6 @@
 # Makefile
 NAME = dwmstatus
-VERSION = 0.1
+VERSION = 0.1-`date +%d%m%y-%H%M%S`
 
 SRC = dwmstatus.c
 OBJ = ${SRC:.c=.o}
