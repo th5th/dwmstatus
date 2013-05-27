@@ -1,46 +1,30 @@
-# Makefile
-NAME = dwmstatus
-VERSION = 0.1-`date +%d%m%y-%H%M%S`
+include config.mk
 
-SRC = dwmstatus.c
 OBJ = ${SRC:.c=.o}
+DEPEND = ${SRC:.c=.d} 
 
-# paths
-PREFIX = /home/th5th/
+all: ${NAME}
 
-# includes and libs
-#INCS = -I/include/path
-LIBS = -lX11
+${NAME}: ${OBJ}
+	${CC} -o $@ $^ ${LDFLAGS}
 
-# flags
-CPPFLAGS = -DVERSION=\"${VERSION}\"
-CFLAGS = -g -std=c99 -pedantic -Wall -O0 ${INCS}
-LDFLAGS = -g ${LIBS}
+%.d: %.c
+	@set -e; rm -f $@
+	${CC} -MM ${CFLAGS} ${CPPFLAGS} $< | sed 's/\(^.*\)\.o[ :]*/\1.o $@ : /g' > $@
 
-CC = gcc
+include ${DEPEND}
 
-debug: dwmstatus
-debug: CPPFLAGS += -DDEBUG 
-
-release: dwmstatus
-
-.o:
-	${CC} -c ${CFLAGS} ${CPPFLAGS} $<
-
-dwmstatus: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
-
-clean:
-	rm -f ${NAME} ${OBJ}
-
-install: release
-	echo Installing executable file to ${DESTDIR}${PREFIX}/bin
-	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f ${NAME} ${DESTDIR}${PREFIX}/bin
-	chmod 755 ${DESTDIR}${PREFIX}/bin/${NAME}
+install: ${NAME}
+	@echo Installing executable to ${DESTDIR}/bin
+	mkdir -p ${DESTDIR}/bin
+	cp -f ${NAME} ${DESTDIR}/bin
+	chmod 755 ${DESTDIR}/bin/${NAME}
 
 uninstall:
-	echo Removing executable file from ${DESTDIR}${PREFIX}/bin
-	rm -f ${DESTDIR}${PREFIX}/bin/${NAME}
+	@echo Removing executable from ${DESTDIR}/bin
+	rm -f ${DESTDIR}/bin/${NAME}
 
-.PHONY: clean debug install release uninstall
+clean:
+	rm -f ${NAME} ${OBJ} ${DEPEND}
+
+.PHONY: clean install uninstall
