@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <X11/Xlib.h>
+
+#include <iwlib.h>
 
 #define STATUS_BUF_SIZE 64
 
@@ -14,10 +17,11 @@ static Display *disp;
 
 int read_int_from_file(const char *path);
 void read_str_from_file(const char *path, char *buf, size_t buf_size);
-Bool get_batt_info(char *buf);
-Bool get_date_time(char *buf);
+bool get_batt_info(char *buf);
+bool get_date_time(char *buf);
 
-Bool get_batt_info(char *buf) {
+bool get_batt_info(char *buf)
+{
     char batt_state[STATUS_BUF_SIZE];
     float energy_now, energy_full, energy_full_design, percent;
 
@@ -48,7 +52,7 @@ Bool get_batt_info(char *buf) {
     return True;
 }
 
-Bool get_date_time(char *buf)
+bool get_date_time(char *buf)
 {
     time_t result;
     struct tm *resulttm;
