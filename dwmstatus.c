@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     }
 
     openlog("dwmstatus", LOG_PID|LOG_CONS, LOG_USER);
+    syslog(LOG_INFO, "Opened log file");
 
     if (!(disp = XOpenDisplay(NULL))) {
         syslog(LOG_ERR, "Cannot open X display");
@@ -136,12 +137,11 @@ int main(int argc, char *argv[])
         // Generate output string and write to X root window name / stdout.
         sprintf(status_text, "%s  |  %s", batt_buf, time_buf);
 
-#ifndef DEBUG
         XStoreName(disp, DefaultRootWindow(disp), status_text);
         XSync(disp, False);
-#else
-        printf("%s\n", status_text);
-#endif // DEBUG
+#ifdef DEBUG
+        syslog(LOG_DEBUG, "%s", status_text);
+#endif
     }
 
     XCloseDisplay(disp);
