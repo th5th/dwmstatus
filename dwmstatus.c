@@ -15,7 +15,7 @@
 static Display *disp;
 
 int read_int_from_file(const char *path);
-void read_str_from_file(const char *path, char *buf, size_t buf_size);
+size_t read_str_from_file(const char *path, char *buf, size_t buf_size);
 bool get_batt_info(char *buf);
 bool get_date_time(char *buf);
 
@@ -30,18 +30,20 @@ bool get_batt_info(char *buf)
         (float)read_int_from_file("/sys/class/power_supply/BAT0/energy_full_design");
 
 
-    if(abs(energy_full-energy_full_design) / energy_full_design > 0.1)
+    if (abs(energy_full-energy_full_design) / energy_full_design > 0.1)
     {
-        syslog(LOG_WARNING, "Large energy_full - energy_full_design deviation. "
-               "Falling back to design value");
+        syslog(LOG_WARNING, "%s: Large energy_full - energy_full_design deviation. "
+               "Falling back to design value", __func__);
         percent = energy_now / energy_full_design;
-    } else {
+    }
+    else
+    {
         percent = energy_now / energy_full;
     }
 
-    if(percent < 0.0)
+    if (percent < 0.0)
     {
-        syslog(LOG_WARNING, "Battery percent < 0");
+        syslog(LOG_WARNING, "%s: Battery percent negative (%f)", __func__, percent);
         return False;
     }
 
@@ -58,12 +60,15 @@ bool get_date_time(char *buf)
 
     result = time(NULL);
     resulttm = localtime(&result);
-    if(resulttm == NULL) {
-        syslog(LOG_WARNING, "Error getting localtime");
+    if (resulttm == NULL)
+    {
+        syslog(LOG_WARNING, "%s: Failed to get localtime", __func__);
         return False;
     }
-    if(!strftime(buf, sizeof(char)*STATUS_BUF_SIZE - 1, "%A %d %B %R", resulttm)) {
-        syslog(LOG_WARNING, "strftime is 0");
+
+    if (!strftime(buf, sizeof(char)*STATUS_BUF_SIZE - 1, "%A %d %B %R", resulttm))
+    {
+        syslog(LOG_WARNING, "%s: strftime is 0", __func__);
         return False;
     }
 
@@ -75,10 +80,12 @@ int read_int_from_file(const char *path)
     int rv = -1;
     FILE *fd = fopen(path, "r");
 
-    if(fd == NULL)
+    if (fd == NULL)
     {
-        syslog(LOG_WARNING, "Error opening file %s", path);
-    } else {
+        syslog(LOG_WARNING, "%s: Failed to open file %s", __func__, path);
+    }
+    else
+    {
         fscanf(fd, "%d", &rv);
         fclose(fd);
     }
@@ -86,20 +93,27 @@ int read_int_from_file(const char *path)
     return rv;
 }
 
-void read_str_from_file(const char *path, char *buf, size_t buf_size)
+size_t read_str_from_file(const char *path, char *buf, size_t buf_size)
 {
-    FILE *fd;
     char ch = 0;
-    int idx = 0;
+    size_t idx = 0;
+    FILE *fd = fopen(path, "r");
 
-    if (!(fd = fopen(path, "r"))) return;
+    if (fd == NULL)
+    {
+        syslog(LOG_WARNING, "%s: Failed to open file %s", __func__, path);
+    }
+    else
+    {
+        while ((ch = fgetc(fd)) != EOF && ch != '\0' && ch != '\n' && idx < buf_size) {
+            buf[idx++] = ch;
+        }
 
-    while ((ch = fgetc(fd)) != EOF && ch != '\0' && ch != '\n' && idx < buf_size) {
-        buf[idx++] = ch;
+        buf[idx] = '\0';
+        fclose(fd);
     }
 
-    buf[idx] = '\0';
-    fclose(fd);
+    return idx;
 }
 
 int main(int argc, char *argv[])
@@ -116,10 +130,10 @@ int main(int argc, char *argv[])
     }
 
     openlog("dwmstatus", LOG_PID|LOG_CONS, LOG_USER);
-    syslog(LOG_INFO, "Opened log file");
+    syslog(LOG_INFO, "%s: Opened log file", __func__);
 
     if (!(disp = XOpenDisplay(NULL))) {
-        syslog(LOG_ERR, "Cannot open X display");
+        syslog(LOG_ERR, "%s: Cannot open X display", __func__);
         exit(EXIT_FAILURE);
     }
 
@@ -131,7 +145,7 @@ int main(int argc, char *argv[])
     {
         if(!get_batt_info(batt_buf) || !get_date_time(time_buf))
         {
-            syslog(LOG_WARNING, "Error fetching status info");
+            syslog(LOG_WARNING, "%s: Error fetching status info", __func__);
         }
 
         // Generate output string and write to X root window name / stdout.
