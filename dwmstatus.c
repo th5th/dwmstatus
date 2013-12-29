@@ -5,9 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <syslog.h>
 #include <X11/Xlib.h>
-
-#include <iwlib.h>
 
 #define STATUS_BUF_SIZE 64
 
@@ -33,8 +32,8 @@ bool get_batt_info(char *buf)
 
     if(abs(energy_full-energy_full_design) / energy_full_design > 0.1)
     {
-        fprintf(stderr, "Warning: Large energy_full - energy_full_design deviation. "
-                "Falling back to design value.\n");
+        syslog(LOG_WARNING, "Large energy_full - energy_full_design deviation. "
+               "Falling back to design value");
         percent = energy_now / energy_full_design;
     } else {
         percent = energy_now / energy_full;
@@ -42,7 +41,7 @@ bool get_batt_info(char *buf)
 
     if(percent < 0.0)
     {
-        fprintf(stderr, "Battery percent < 0.\n");
+        syslog(LOG_WARNING, "Battery percent < 0");
         return False;
     }
 
@@ -60,11 +59,11 @@ bool get_date_time(char *buf)
     result = time(NULL);
     resulttm = localtime(&result);
     if(resulttm == NULL) {
-        fprintf(stderr, "Error getting localtime.\n");
+        syslog(LOG_WARNING, "Error getting localtime");
         return False;
     }
     if(!strftime(buf, sizeof(char)*STATUS_BUF_SIZE - 1, "%A %d %B %R", resulttm)) {
-        fprintf(stderr, "strftime is 0.\n");
+        syslog(LOG_WARNING, "strftime is 0");
         return False;
     }
 
@@ -76,8 +75,9 @@ int read_int_from_file(const char *path)
     int rv = -1;
     FILE *fd = fopen(path, "r");
 
-    if(fd == NULL) {
-        fprintf(stderr, "Error opening file %s.\n", path);
+    if(fd == NULL)
+    {
+        syslog(LOG_WARNING, "Error opening file %s", path);
     } else {
         fscanf(fd, "%d", &rv);
         fclose(fd);
@@ -108,14 +108,18 @@ int main(int argc, char *argv[])
     {
         printf(INFO_STRING"\n");
         exit(EXIT_SUCCESS);
-    } else if(argc > 1) {
+    }
+    else if(argc > 1)
+    {
         printf(INFO_STRING"\nUsage dwmstatus [-v | --version]\n");
         exit(EXIT_FAILURE);
     }
 
+    openlog("dwmstatus", LOG_PID|LOG_CONS, LOG_USER);
+
     if (!(disp = XOpenDisplay(NULL))) {
-        fprintf(stderr, "Cannot open display.\n");
-        return 1;
+        syslog(LOG_ERR, "Cannot open X display");
+        exit(EXIT_FAILURE);
     }
 
     char status_text[2*STATUS_BUF_SIZE];
@@ -126,8 +130,7 @@ int main(int argc, char *argv[])
     {
         if(!get_batt_info(batt_buf) || !get_date_time(time_buf))
         {
-            fprintf(stderr, "Error fetching status info.\n");
-            exit(EXIT_FAILURE);
+            syslog(LOG_WARNING, "Error fetching status info");
         }
 
         // Generate output string and write to X root window name / stdout.
@@ -143,5 +146,7 @@ int main(int argc, char *argv[])
 
     XCloseDisplay(disp);
 
+    closelog();
+    
     exit(EXIT_SUCCESS);
 }
