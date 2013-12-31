@@ -101,12 +101,19 @@ bool get_network_info(char *buf)
     do { ch = fgetc(wireless_info); } while (ch != EOF && ch != '\n');
     do { ch = fgetc(wireless_info); } while (ch != EOF && ch != '\n');
 
-    read_word_from_file(wireless_info, iface_name, STATUS_BUF_SIZE);
-    read_word_from_file(wireless_info, iface_status, STATUS_BUF_SIZE);
+    size_t n_ch;
+    if (!read_word_from_file(wireless_info, iface_name, STATUS_BUF_SIZE) ||
+        !read_word_from_file(wireless_info, iface_status, STATUS_BUF_SIZE))
+    {
+        n_ch = snprintf(buf, STATUS_BUF_SIZE, "Wireless down");
+    }
+    else
+    {
+        n_ch = snprintf(buf, STATUS_BUF_SIZE, "Wireless up (%s %s)", iface_name, iface_status);
+    }
 
     fclose(wireless_info);
 
-    size_t n_ch = snprintf(buf, STATUS_BUF_SIZE, "%s up (status %s)", iface_name, iface_status);
     return n_ch > STATUS_BUF_SIZE ? false : true;
 }
 
@@ -187,9 +194,14 @@ size_t read_word_from_file(FILE *f, char *buf, size_t buf_size)
         bool in_word = false;
         while ((ch = fgetc(f)) != EOF && idx < buf_size)
         {
-            if (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t')
+            if (ch == '\n' ||
+                ch == '\r' ||
+                ch == ' ' ||
+                ch == ':' ||
+                ch == ',' ||
+                ch == '\t')
             {
-                // whitespace
+                // whitespace / whatever punctuation
                 if (in_word)
                 {
                     // word ended
