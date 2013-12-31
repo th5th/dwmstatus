@@ -4,7 +4,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
 #include <syslog.h>
 #include <X11/Xlib.h>
 
@@ -17,6 +16,8 @@
 #define ENERGY_FULL_DESIGN_PATH "/sys/class/power_supply/BAT0/energy_full_design"
 #define BATT_STATUS_PATH        "/sys/class/power_supply/BAT0/status"
 #define WIRELESS_INFO_PATH      "/proc/net/wireless"
+
+#define UPDATE_INTERVAL         10
 
 static Display *disp;
 
@@ -252,7 +253,7 @@ int main(int argc, char *argv[])
     char net_buf[STATUS_BUF_SIZE];
     char time_buf[STATUS_BUF_SIZE];
 
-    for(;;sleep(10)) 
+    while (true)
     {
         if (!get_batt_info(batt_buf))
         {
@@ -276,7 +277,10 @@ int main(int argc, char *argv[])
         XSync(disp, false);
 #ifdef DEBUG
         syslog(LOG_DEBUG, "%s", status_text);
+        printf("%s", status_text);
 #endif
+
+        sleep(UPDATE_INTERVAL);
     }
 
     XCloseDisplay(disp);
